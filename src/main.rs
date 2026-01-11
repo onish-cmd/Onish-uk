@@ -40,6 +40,10 @@ pub extern "C" fn _start() {
 pub fn kmain() -> ! {
     unsafe {
         let uart_cr = (0x09000000 + 0x30) as *mut u32;
+        let fr = (0x0900_0000 + 0x18) as *const u32; // Flag Register
+        while (core::ptr::read_volatile(fr) & 0x20) != 0 {
+            core::hint::spin_loop()
+        }
         core::ptr::write_volatile(uart_cr, 0x301);
     }
 
