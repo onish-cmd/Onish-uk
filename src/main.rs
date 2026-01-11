@@ -3,6 +3,7 @@
 #![reexport_test_harness_main = "test_main"]
 
 use core::panic::PanicInfo;
+use core::arch::asm;
 
 // --- HARDWARE ADDRESSES ---
 #[cfg(feature = "qemu")]
@@ -25,6 +26,9 @@ fn print(s: &str) {
 #[no_mangle]
 #[link_section = ".text._start"]
 pub extern "C" fn _start() -> ! {
+    unsafe {
+        asm!("mov sp, #0x48000000")
+    }
     print("\nIf you see this, You WON!\n");
     loop {}
 }
