@@ -3,8 +3,6 @@ name: Build Onish-µK
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
 
 jobs:
   build:
@@ -19,13 +17,31 @@ jobs:
       with:
         targets: armv7a-none-eabi
 
-    - name: Install ARM Toolchain (for objcopy)
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y gcc-arm-none-eabi
+    - name: Install ARM Toolchain
+      run: sudo apt-get update && sudo apt-get install -y gcc-arm-none-eabi
 
-    - name: Build Kernel (QEMU Feature)
-      run: cargo build --target armv7a-none-eabi --features qemu
+    - name: Create Linker Script on the fly
+      run: |
+        cat <<EOF > linker.ld
+        ENTRY(_start)
+        SECTIONS
+        {
+            . = 0x40000000; 
+            .text : {
+                KEEP(*(.text._start))
+                *(.text .text.*)
+            }
+            .rodata : { *(.rodata .rodata.*) }
+            .data : { *(.data .data.*) }
+            .bss : { *(.bss .bss.*) }
+        }
+        EOF
+
+    - name: Build Kernel
+      # We pass the linker argument directly here so you don't need .cargo/config.toml
+      run: cargo build --target armv7a-none-eabi
+      env:
+        RUSTFLAGS: "-C link-arg=-Tlinker.ld"
 
     - name: Convert to .img binary
       run: |
