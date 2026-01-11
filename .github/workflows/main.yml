@@ -30,7 +30,7 @@ jobs:
     - name: Convert to .img binary
       run: |
         arm-none-eabi-objcopy -O binary \
-          target/armv7a-none-eabi/debug/onish-uk \
+          target/armv7a-none-eabi/debug/kernel \
           onish-uk-qemu.img
 
     - name: Upload Kernel Image
