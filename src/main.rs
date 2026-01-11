@@ -36,6 +36,7 @@ pub extern "C" fn _start() {
     }
 }
 
+#[no_mangle]
 pub fn kmain() -> ! {
     unsafe {
         let uart_cr = (0x09000000 + 0x30) as *mut u32;
