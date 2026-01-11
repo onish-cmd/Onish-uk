@@ -49,7 +49,11 @@ pub fn kmain() -> ! {
 
     print("\n-- Onish-µK -- \n");
 
-    loop {}
+    loop {
+        unsafe {
+            core::arch::asm!("wfi")
+        }
+    }
 }
 
 #[panic_handler]
