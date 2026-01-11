@@ -25,16 +25,25 @@ fn print(s: &str) {
 
 #[no_mangle]
 #[link_section = ".text._start"]
-pub extern "C" fn _start() -> ! {
+pub extern "C" fn _start() {
     unsafe {
         // Move stack pointer to #0x48000000
-        asm!("mov sp, #0x48000000");
-
-        // Enable UART
-        let uart_cr = (0x09000000 + 0x30) as *mut u32;
-        core::ptr::write_volatile(uart_cr, 0x301); // 0x301 sets UARTEN (bit 0), TXE (bit 8), and RXE (bit 9)
+        asm!(
+        "mov sp, #0x48000000",
+        "bl kmain",
+        options(noreturn)
+        );
     }
-    print("\n-- Onish-µK 0.0.1 --\n");
+}
+
+pub fn kmain() -> ! {
+    unsafe {
+        let uart_cr = (0x09000000 + 0x30) as *mut u32;
+        core::ptr::write_volatile(uart_cr, 0x301);
+    }
+
+    print("\n-- Onish-µK -- \n");
+
     loop {}
 }
 
