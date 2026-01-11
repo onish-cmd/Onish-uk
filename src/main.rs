@@ -27,9 +27,14 @@ fn print(s: &str) {
 #[link_section = ".text._start"]
 pub extern "C" fn _start() -> ! {
     unsafe {
-        asm!("mov sp, #0x48000000")
+        // Move stack pointer to #0x48000000
+        asm!("mov sp, #0x48000000");
+
+        // Enable UART
+        let uart_cr = (0x09000000 + 0x30) as *mut u32;
+        core::ptr::write_volatile(uart_cr, 0x301); // 0x301 sets UARTEN (bit 0), TXE (bit 8), and RXE (bit 9)
     }
-    print("\nIf you see this, You WON!\n");
+    print("\n-- Onish-µK 0.0.1 --\n");
     loop {}
 }
 
