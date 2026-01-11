@@ -1,0 +1,12 @@
+[package]
+name = "onish-uk"
+version = "0.0.1"
+
+[features]
+default = ["qemu"]
+qemu = []
+luckfox = []
+
+[[bin]]
+name = "kernel"
+path = "src/main.rs"
