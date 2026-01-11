@@ -47,7 +47,7 @@ pub fn kmain() -> ! {
         core::ptr::write_volatile(uart_cr, 0x301);
     }
 
-    print("\n-- Onish-µK -- \n");
+    print("\n-- Onish-Kernel --\n");
 
     loop {
         unsafe {
