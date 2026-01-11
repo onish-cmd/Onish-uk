@@ -1,0 +1,40 @@
+name: Build Onish-µK
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: armv7a-none-eabi
+
+    - name: Install ARM Toolchain (for objcopy)
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc-arm-none-eabi
+
+    - name: Build Kernel (QEMU Feature)
+      run: cargo build --target armv7a-none-eabi --features qemu
+
+    - name: Convert to .img binary
+      run: |
+        arm-none-eabi-objcopy -O binary \
+          target/armv7a-none-eabi/debug/onish-uk \
+          onish-uk-qemu.img
+
+    - name: Upload Kernel Image
+      uses: actions/upload-artifact@v4
+      with:
+        name: onish-uk-kernel
+        path: onish-uk-qemu.img
