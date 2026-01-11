@@ -23,6 +23,7 @@ fn print(s: &str) {
 }
 
 #[no_mangle]
+#[link_section = ".text._start"]
 pub extern "C" fn _start() -> ! {
     print("\nIf you see this, You WON!\n");
     loop {}
