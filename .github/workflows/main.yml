@@ -31,7 +31,7 @@ jobs:
         # Using llvm-objcopy is often more reliable with Rust, 
         # but arm-none-eabi-objcopy works great too!
         arm-none-eabi-objcopy -O binary \
-          target/armv7a-none-eabi/debug/onish-kernel \
+          target/armv7a-none-eabi/debug/kernel \
           onish-uk-qemu.img
 
     - name: Upload Kernel Image
