@@ -2,10 +2,8 @@
 name = "onish-uk"
 version = "0.0.1"
 
-[features]
-default = ["qemu"]
-qemu = []
-luckfox = []
+[dependencies]
+fdt = "0.1.5"
 
 [[bin]]
 name = "kernel"

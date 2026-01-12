@@ -2,19 +2,17 @@
 #![no_main]
 #![reexport_test_harness_main = "test_main"]
 
+// Imports
 use core::panic::PanicInfo;
 use core::arch::asm;
+extern crate fdt;
 
-// --- HARDWARE ADDRESSES ---
-#[cfg(feature = "qemu")]
-const UART0_BASE: *mut u8 = 0x09000000 as *mut u8; 
-
-#[cfg(not(feature = "qemu"))]
-const UART0_BASE: *mut u8 = 0xff130000 as *mut u8;
+static mut UART_BASE: *mut u8 = 0x09000000 as *mut u8;
 
 pub fn uart_punc(c: u8) {
-    let ptr = UART0_BASE;
-    unsafe { core::ptr::write_volatile(ptr, c)}
+    unsafe {
+        core::ptr::write_volatile(UART_BASE, c)
+    }
 }
 
 fn print(s: &str) {
@@ -29,6 +27,7 @@ pub extern "C" fn _start() {
     unsafe {
         // Move stack pointer to #0x48000000
         asm!(
+        "mov r0, r2",
         "mov sp, #0x48000000",
         "bl kmain",
         options(noreturn)
@@ -37,10 +36,21 @@ pub extern "C" fn _start() {
 }
 
 #[no_mangle]
-pub fn kmain() -> ! {
+pub fn kmain(dtb_ptr: usize) -> ! {
     unsafe {
-        let uart_cr = (0x09000000 + 0x30) as *mut u32;
-        let fr = (0x0900_0000 + 0x18) as *const u32; // Flag Register
+    if let Ok(fdt) = fdt::Fdt::from_ptr(dtb_ptr as *const u8) {
+        let uart_node = fdt.find_compatible(&["arm,pl011"])
+        .or_else(|| fdt.find_compatible(&["snp,dw-apb-uart"]));
+        if let Some(node) = uart_node {
+            if let Some(reg) = node.reg().and_then(|mut r| r.next()) {
+                UART_BASE = reg.starting_address as *mut u8;
+            }
+    }
+    }
+}
+    unsafe {
+        let uart_cr = UART_BASE.add(0x30) as *mut u32;
+        let fr = UART_BASE.add(0x18) as *const u32; // Flag Register
         while (core::ptr::read_volatile(fr) & 0x20) != 0 {
             core::hint::spin_loop()
         }
