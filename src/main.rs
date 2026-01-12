@@ -25,9 +25,9 @@ global_asm!(
         ldr r3, =__stack_top
         add sp, r3, r12
 
-        ldr r1 =__bss_start
+        ldr r1, =__bss_start
         add r1, r1, r12
-        ldr r2 =__bss_end
+        ldr r2, =__bss_end
         add r2, r2, r12
         mov r3, #0
     clear_bss:
