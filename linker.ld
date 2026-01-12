@@ -2,27 +2,26 @@ ENTRY(_start)
 
 SECTIONS
 {
-    /* This is the address where QEMU starts reading the kernel */
-    . = 0x40000000; 
+    /* We link at 0. The Assembly calculates the real address! */
+    . = 0x00000000;
 
-    /* Put the code (text) here */
     .text : {
-        KEEP(*(.text._start)) /* Ensure _start is at the very beginning */
+        KEEP(*(.text._start))
         *(.text .text.*)
     }
 
-    /* Put constants and strings (like "If you see this, You WON!") here */
-    .rodata : {
-        *(.rodata .rodata.*)
-    }
+    .rodata : { *(.rodata .rodata.*) }
+    .data   : { *(.data .data.*) }
 
-    /* Put global variables here */
-    .data : {
-        *(.data .data.*)
-    }
-
-    /* Put zero-initialized variables here */
     .bss : {
+        __bss_start = .;
         *(.bss .bss.*)
+        __bss_end = .;
+    }
+
+    . = ALIGN(8);
+    .stack : {
+        . += 0x10000; /* 64KB stack */
+        __stack_top = .;
     }
 }

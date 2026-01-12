@@ -5,7 +5,44 @@
 // Imports
 use core::panic::PanicInfo;
 use core::arch::asm;
+use core::arch::global_asm;
 extern crate fdt;
+
+global_asm!(
+    r#"
+    .section .text._start
+    .global _start
+    _start:
+        mrs r0, cpsr
+        bic r0, r0, #0x1F
+        orr r0, r0, #0x13
+        msr cpsr_c, r0
+
+        ldr r0, =_start
+        adr r1, _start
+        sub r12, r1, r0
+
+        ldr r3, =__stack_top
+        add sp, r3, r12
+
+        ldr r1 =__bss_start
+        add r1, r1, r12
+        ldr r2 =__bss_end
+        add r2, r2, r12
+        mov r3, #0
+    clear_bss:
+        cmp r1, r2
+        strlo r3, [r1], #4
+        blo clear_bss
+
+        mov r0, r2
+        bl kmain
+
+    halt:
+        wfi
+        b halt
+    "#
+);
 
 static mut UART_BASE: *mut u8 = 0x09000000 as *mut u8;
 
@@ -22,25 +59,13 @@ fn print(s: &str) {
 }
 
 #[no_mangle]
-#[link_section = ".text._start"]
-pub extern "C" fn _start() {
-    unsafe {
-        // Move stack pointer to #0x48000000
-        asm!(
-        "mov r0, r2",
-        "mov sp, #0x48000000",
-        "bl kmain",
-        options(noreturn)
-        );
-    }
-}
 
 #[no_mangle]
 pub fn kmain(dtb_ptr: usize) -> ! {
     unsafe {
     if let Ok(fdt) = fdt::Fdt::from_ptr(dtb_ptr as *const u8) {
         let uart_node = fdt.find_compatible(&["arm,pl011"])
-        .or_else(|| fdt.find_compatible(&["snp,dw-apb-uart"]));
+        .or_else(|| fdt.find_compatible(&["snps,dw-apb-uart"]));
         if let Some(node) = uart_node {
             if let Some(reg) = node.reg().and_then(|mut r| r.next()) {
                 UART_BASE = reg.starting_address as *mut u8;
