@@ -1,4 +1,4 @@
-name: Build Onish-µK
+name: Build Onish-Kernel
 
 on:
   push:
@@ -20,33 +20,18 @@ jobs:
     - name: Install ARM Toolchain
       run: sudo apt-get update && sudo apt-get install -y gcc-arm-none-eabi
 
-    - name: Create Linker Script on the fly
-      run: |
-        cat <<EOF > linker.ld
-        ENTRY(_start)
-        SECTIONS
-        {
-            . = 0x40100000; 
-            .text : {
-                KEEP(*(.text._start))
-                *(.text .text.*)
-            }
-            .rodata : { *(.rodata .rodata.*) }
-            .data : { *(.data .data.*) }
-            .bss : { *(.bss .bss.*) }
-        }
-        EOF
-
     - name: Build Kernel
-      # We pass the linker argument directly here so you don't need .cargo/config.toml
+      # This now looks for the 'linker.ld' file you committed to your repo root
       run: cargo build --target armv7a-none-eabi
       env:
         RUSTFLAGS: "-C link-arg=-Tlinker.ld"
 
     - name: Convert to .img binary
       run: |
+        # Using llvm-objcopy is often more reliable with Rust, 
+        # but arm-none-eabi-objcopy works great too!
         arm-none-eabi-objcopy -O binary \
-          target/armv7a-none-eabi/debug/kernel \
+          target/armv7a-none-eabi/debug/onish-kernel \
           onish-uk-qemu.img
 
     - name: Upload Kernel Image
