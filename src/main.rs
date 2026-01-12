@@ -13,6 +13,11 @@ global_asm!(
     .section .text._start
     .global _start
     _start:
+    -- TEST --
+        mov r4, #0x09000000
+        mov r5, #79
+        str r5, [r4]
+    -- TEST END --
         mrs r0, cpsr
         bic r0, r0, #0x1F
         orr r0, r0, #0x13
@@ -21,9 +26,15 @@ global_asm!(
         ldr r0, =_start
         adr r1, _start
         sub r12, r1, r0
-
         ldr r3, =__stack_top
         add sp, r3, r12
+
+        ldr r4, =UART_BASE
+        add r4, r4, r12
+        ldr r5, [r4]
+
+        mov r6, #71
+        str r6, [r5]
 
         ldr r1, =__bss_start
         add r1, r1, r12
@@ -45,8 +56,6 @@ global_asm!(
     "#
 );
 
-static mut UART_BASE: *mut u8 = 0x09000000 as *mut u8;
-
 pub fn uart_punc(c: u8) {
     unsafe {
         core::ptr::write_volatile(UART_BASE, c)
@@ -60,9 +69,12 @@ fn print(s: &str) {
 }
 
 #[no_mangle]
+static mut UART_BASE: *mut u8 = 0x09000000 as *mut u8;
 pub fn kmain(dtb_ptr: usize, delta: usize) -> ! {
     unsafe {
-    UART_BASE = (UART_BASE as usize + delta) as *mut u8;
+    let real_uart_base_ptr = (&core::ptr::addr_of_mut!(UART_BASE) as *const _ as usize + delta) as *mut *mut u8;
+    *real_uart_base_ptr = (*real_uart_base_ptr as usize + delta) as *mut u8;
+    
     if let Ok(fdt) = fdt::Fdt::from_ptr(dtb_ptr as *const u8) {
         let uart_node = fdt.find_compatible(&["arm,pl011"])
         .or_else(|| fdt.find_compatible(&["snps,dw-apb-uart"]));
