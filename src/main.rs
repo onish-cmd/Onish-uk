@@ -13,11 +13,11 @@ global_asm!(
     .section .text._start
     .global _start
     _start:
-    -- TEST --
+    @ -- TEST --
         mov r4, #0x09000000
         mov r5, #79
         str r5, [r4]
-    -- TEST END --
+    @ -- TEST END --
         mrs r0, cpsr
         bic r0, r0, #0x1F
         orr r0, r0, #0x13
@@ -74,7 +74,7 @@ pub fn kmain(dtb_ptr: usize, delta: usize) -> ! {
     unsafe {
     let real_uart_base_ptr = (&core::ptr::addr_of_mut!(UART_BASE) as *const _ as usize + delta) as *mut *mut u8;
     *real_uart_base_ptr = (*real_uart_base_ptr as usize + delta) as *mut u8;
-    
+
     if let Ok(fdt) = fdt::Fdt::from_ptr(dtb_ptr as *const u8) {
         let uart_node = fdt.find_compatible(&["arm,pl011"])
         .or_else(|| fdt.find_compatible(&["snps,dw-apb-uart"]));
