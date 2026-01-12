@@ -36,6 +36,7 @@ global_asm!(
         blo clear_bss
 
         mov r0, r2
+        mov r1, r12
         bl kmain
 
     halt:
@@ -59,10 +60,9 @@ fn print(s: &str) {
 }
 
 #[no_mangle]
-
-#[no_mangle]
-pub fn kmain(dtb_ptr: usize) -> ! {
+pub fn kmain(dtb_ptr: usize, delta: usize) -> ! {
     unsafe {
+    UART_BASE = (UART_BASE as usize + delta) as *mut u8;
     if let Ok(fdt) = fdt::Fdt::from_ptr(dtb_ptr as *const u8) {
         let uart_node = fdt.find_compatible(&["arm,pl011"])
         .or_else(|| fdt.find_compatible(&["snps,dw-apb-uart"]));
