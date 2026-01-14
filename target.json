@@ -1,8 +1,8 @@
 {
   "llvm-target": "arm-none-eabi",
   "target-endian": "little",
-  "target-pointer-width": "32",
-  "target-c-int-width": 32,
+  "target-pointer-width": 32,
+  "target-c-int-width": "32",
   "os": "none",
   "env": "newlib",
   "arch": "arm",
