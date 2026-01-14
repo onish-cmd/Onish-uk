@@ -71,6 +71,7 @@ fn print(s: &str) {
 #[no_mangle]
 static mut UART_BASE: *mut u8 = 0x09000000 as *mut u8;
 pub fn kmain(dtb_ptr: usize, delta: usize) -> ! {
+    print("Hi")
     unsafe {
     let real_uart_base_ptr = (&core::ptr::addr_of_mut!(UART_BASE) as *const _ as usize + delta) as *mut *mut u8;
     *real_uart_base_ptr = (*real_uart_base_ptr as usize + delta) as *mut u8;
