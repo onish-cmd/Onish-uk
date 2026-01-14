@@ -1,0 +1,22 @@
+{
+  "llvm-target": "arm-none-eabi",
+  "target-endian": "little",
+  "target-pointer-width": "32",
+  "target-c-int-width": "32",
+  "os": "none",
+  "env": "newlib",
+  "arch": "arm",
+  "linker-flavor": "ld.lld",
+  "linker": "rust-lld",
+  "relocation-model": "pic",
+  "code-model": "small",
+  "cpu": "generic",
+  "features": "+v7,+vfp3,+d32,+thumb2,+neon",
+  "disable-redzone": true,
+  "panic-strategy": "abort",
+  "relro-level": "full",
+  "executables": true,
+  "has-rpath": false,
+  "no-default-libraries": true,
+  "emit-debug-gdb-scripts": false
+}

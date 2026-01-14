@@ -2,7 +2,6 @@
 #![no_main]
 #![reexport_test_harness_main = "test_main"]
 
-// Imports
 use core::panic::PanicInfo;
 use core::arch::global_asm;
 extern crate fdt;
@@ -12,29 +11,22 @@ global_asm!(
     .section .text._start
     .global _start
     _start:
-    @ -- TEST --
-        mov r4, #0x09000000
-        mov r5, #79
-        str r5, [r4]
-    @ -- TEST END --
+        @ 1. Switch to Supervisor Mode (EL1)
         mrs r0, cpsr
         bic r0, r0, #0x1F
         orr r0, r0, #0x13
         msr cpsr_c, r0
 
-        ldr r0, =_start
-        adr r1, _start
-        sub r12, r1, r0
+        @ 2. Set up Stack
+        @ In PIC mode, we use 'adr' to find our current position
+        adr r0, _start
+        ldr r1, =_start
+        sub r12, r0, r1      @ r12 is still our delta/offset
+        
         ldr r3, =__stack_top
-        add sp, r3, r12
+        add sp, r3, r12      @ Offset the stack pointer to real RAM
 
-        ldr r4, =UART_BASE
-        add r4, r4, r12
-        ldr r5, [r4]
-
-        mov r6, #71
-        str r6, [r5]
-
+        @ 3. Clear BSS
         ldr r1, =__bss_start
         add r1, r1, r12
         ldr r2, =__bss_end
@@ -45,6 +37,8 @@ global_asm!(
         strlo r3, [r1], #4
         blo clear_bss
 
+        @ 4. Jump to Rust
+        @ Pass DTB pointer (r2 from QEMU) and delta (r12)
         mov r0, r2
         mov r1, r12
         bl kmain
@@ -55,59 +49,65 @@ global_asm!(
     "#
 );
 
+#[no_mangle]
+static mut UART_BASE: *mut u8 = 0x09000000 as *mut u8;
+
+/// With PIC, this function automatically finds UART_BASE relative to the PC.
 pub fn uart_punc(c: u8) {
     unsafe {
-        core::ptr::write_volatile(UART_BASE, c)
+        // The compiler now generates PC-relative code to find this address!
+        let base = UART_BASE; 
+        
+        // Wait for TX FIFO (Flag Register offset 0x18, bit 5)
+        while (core::ptr::read_volatile(base.add(0x18) as *const u32) & 0x20) != 0 {
+            core::hint::spin_loop();
+        }
+        core::ptr::write_volatile(base, c);
     }
 }
 
 fn print(s: &str) {
     for b in s.bytes() {
-        uart_punc(b)
+        uart_punc(b);
     }
 }
 
 #[no_mangle]
-static mut UART_BASE: *mut u8 = 0x09000000 as *mut u8;
-#[no_mangle]
-pub fn kmain(dtb_ptr: usize, delta: usize) -> ! {
-    print("Hi");
+pub fn kmain(dtb_ptr: usize, _delta: usize) -> ! {
+    // 1. Initial hardware enable (PL011)
     unsafe {
-    let real_uart_base_ptr = (&core::ptr::addr_of_mut!(UART_BASE) as *const _ as usize + delta) as *mut *mut u8;
-    *real_uart_base_ptr = (*real_uart_base_ptr as usize + delta) as *mut u8;
+        let base = UART_BASE;
+        core::ptr::write_volatile(base.add(0x30) as *mut u32, 0x301);
+    }
 
-    if let Ok(fdt) = fdt::Fdt::from_ptr(dtb_ptr as *const u8) {
-        let uart_node = fdt.find_compatible(&["arm,pl011"])
-        .or_else(|| fdt.find_compatible(&["snps,dw-apb-uart"]));
-        if let Some(node) = uart_node {
-            if let Some(reg) = node.reg().and_then(|mut r| r.next()) {
-                UART_BASE = reg.starting_address as *mut u8;
+    print("Hi! Running with Compiler PIC.\n\r");
+
+    // 2. Discover real UART via FDT
+    unsafe {
+        if let Ok(fdt) = fdt::Fdt::from_ptr(dtb_ptr as *const u8) {
+            let uart_node = fdt.find_compatible(&["arm,pl011"])
+                .or_else(|| fdt.find_compatible(&["snps,dw-apb-uart"]));
+            
+            if let Some(node) = uart_node {
+                if let Some(reg) = node.reg().and_then(|mut r| r.next()) {
+                    // Just update the static mut! PIC handles the rest.
+                    UART_BASE = reg.starting_address as *mut u8;
+                }
             }
-    }
-    }
-}
-    unsafe {
-        let uart_cr = UART_BASE.add(0x30) as *mut u32;
-        let fr = UART_BASE.add(0x18) as *const u32; // Flag Register
-        while (core::ptr::read_volatile(fr) & 0x20) != 0 {
-            core::hint::spin_loop()
         }
-        core::ptr::write_volatile(uart_cr, 0x301);
     }
 
-    print("\n-- Onish-Kernel --\n");
+    print("-- Onish-Kernel: PIC Mode Active --\n\r");
 
     loop {
-        unsafe {
-            core::arch::asm!("wfi")
-        }
+        unsafe { core::arch::asm!("wfi") }
     }
 }
 
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
     print("KERNEL PANIC!");
-    unsafe {
-        loop { core::arch::asm!("wfi") }
+    loop {
+        unsafe { core::arch::asm!("wfi") }
     }
 }

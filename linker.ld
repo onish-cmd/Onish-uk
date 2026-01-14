@@ -2,7 +2,7 @@ ENTRY(_start)
 
 SECTIONS
 {
-    /* We link at 0. The Assembly calculates the real address! */
+    /* We link at 0. The Assembly/PIC handles the real address! */
     . = 0x00000000;
 
     .text : {
@@ -11,11 +11,16 @@ SECTIONS
     }
 
     .rodata : { *(.rodata .rodata.*) }
-    .data   : { *(.data .data.*) }
+    
+    /* VERY IMPORTANT: PIC uses the Global Offset Table */
+    .got : { *(.got*) }
+
+    .data : { *(.data .data.*) }
 
     .bss : {
         __bss_start = .;
         *(.bss .bss.*)
+        *(COMMON)
         __bss_end = .;
     }
 
