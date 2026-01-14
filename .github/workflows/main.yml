@@ -23,9 +23,9 @@ jobs:
       run: sudo apt-get update && sudo apt-get install -y gcc-arm-none-eabi
 
     - name: Build Kernel
-      # We use -Zbuild-std because your custom target doesn't have a pre-compiled 'core'
+      # We use -Zbuild-std because the custom target doesn't have a pre-compiled 'core'
       run: |
-        cargo build --release --target armv7-onish-kernel.json -Z build-std=core,compiler_builtins
+        cargo build --release --target target.json -Z build-std=core,compiler_builtins
 
     - name: Convert to .bin
       run: |
