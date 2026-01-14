@@ -69,6 +69,7 @@ fn print(s: &str) {
 
 #[no_mangle]
 static mut UART_BASE: *mut u8 = 0x09000000 as *mut u8;
+#[no_mangle]
 pub fn kmain(dtb_ptr: usize, delta: usize) -> ! {
     print("Hi");
     unsafe {
