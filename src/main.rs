@@ -44,7 +44,7 @@ global_asm!(
         bl kmain
 
     halt:
-        wfi
+        .inst 0xe320f003
         b halt
     "#
 );
@@ -74,14 +74,6 @@ fn print(s: &str) {
 
 #[no_mangle]
 pub fn kmain(dtb_ptr: usize, _delta: usize) -> ! {
-    // 1. Initial hardware enable (PL011)
-    unsafe {
-        let base = UART_BASE;
-        core::ptr::write_volatile(base.add(0x30) as *mut u32, 0x301);
-    }
-
-    print("Hi! Running with Compiler PIC.\n\r");
-
     // 2. Discover real UART via FDT
     unsafe {
         if let Ok(fdt) = fdt::Fdt::from_ptr(dtb_ptr as *const u8) {
@@ -97,11 +89,15 @@ pub fn kmain(dtb_ptr: usize, _delta: usize) -> ! {
         }
     }
 
+        unsafe {
+            let base = UART_BASE;
+            core::ptr::write_volatile(base.add(0x30) as *mut u32, 0x301);
+        }
     print("-- Onish-Kernel: PIC Mode Active --\n\r");
 
     loop {
         unsafe { core::arch::asm!(
-        "wfi",
+        ".inst 0xe320f003",
         options(nomem, nostack)
     ) }
     }
