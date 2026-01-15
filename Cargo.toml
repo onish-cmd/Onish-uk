@@ -15,7 +15,3 @@ panic = "abort"
 [[bin]]
 name = "kernel"
 path = "src/main.rs"
-
-[dependencies.compiler_builtins]
-version = "0.1.160"
-features = ["mem"]
