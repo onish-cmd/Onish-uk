@@ -6,6 +6,12 @@ edition = "2021"
 [dependencies]
 fdt = "0.1.5"
 
+[profile.release]
+panic = "abort"
+
+[profile.dev]
+panic = "abort"
+
 [[bin]]
 name = "kernel"
 path = "src/main.rs"
