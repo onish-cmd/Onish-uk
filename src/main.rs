@@ -5,6 +5,7 @@
 use core::panic::PanicInfo;
 use core::arch::global_asm;
 extern crate fdt;
+extern crate compiler_builtins;
 
 global_asm!(
     r#"
