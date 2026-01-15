@@ -12,7 +12,7 @@
   "linker": "rust-lld",
   "relocation-model": "pic",
   "code-model": "small",
-  "cpu": "generic",
+  "cpu": "cortex-a7",
   "features": "+v7,+vfp3,+d32,+thumb2,+neon,+v6k",
   "disable-redzone": true,
   "panic-strategy": "abort",
