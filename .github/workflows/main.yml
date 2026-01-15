@@ -31,11 +31,13 @@ jobs:
       run: |
         # Look in the 'release' folder and use the correct target name
         arm-none-eabi-objcopy -O binary \
-          target/armv7-onish-uk/release/kernel \
+          target/target/release/kernel \
           onish-kernel.bin
 
     - name: Upload Kernel Image
       uses: actions/upload-artifact@v4
       with:
         name: onish-kernel-binary
-        path: onish-kernel.bin
+        path: |
+          onish-kernel.bin
+          target/target/release/kernel
