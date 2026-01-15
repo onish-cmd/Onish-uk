@@ -1,6 +1,7 @@
 #![no_std]
 #![no_main]
 #![reexport_test_harness_main = "test_main"]
+#![feature(rustc_private)]
 
 use core::panic::PanicInfo;
 use core::arch::global_asm;
