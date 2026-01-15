@@ -100,7 +100,10 @@ pub fn kmain(dtb_ptr: usize, _delta: usize) -> ! {
     print("-- Onish-Kernel: PIC Mode Active --\n\r");
 
     loop {
-        unsafe { core::arch::asm!("wfi") }
+        unsafe { core::arch::asm!(
+        "wfi",
+        options(nomem, nostack)
+    ) }
     }
 }
 
@@ -108,6 +111,9 @@ pub fn kmain(dtb_ptr: usize, _delta: usize) -> ! {
 fn panic(_info: &PanicInfo) -> ! {
     print("KERNEL PANIC!");
     loop {
-        unsafe { core::arch::asm!("wfi") }
+        unsafe { core::arch::asm!(
+            "wfi",
+            options(nomem, nostack)
+        ) }
     }
 }
