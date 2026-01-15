@@ -112,7 +112,7 @@ fn panic(_info: &PanicInfo) -> ! {
     print("KERNEL PANIC!");
     loop {
         unsafe { core::arch::asm!(
-            "wfi",
+            ".inst 0xe320f003",
             options(nomem, nostack)
         ) }
     }
