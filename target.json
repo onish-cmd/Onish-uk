@@ -13,7 +13,7 @@
   "relocation-model": "pic",
   "code-model": "small",
   "cpu": "generic",
-  "features": "+v7,+vfp3,+d32,+thumb2,+neon",
+  "features": "+v7,+vfp3,+d32,+thumb2,+neon,+6k",
   "disable-redzone": true,
   "panic-strategy": "abort",
   "relro-level": "full",
