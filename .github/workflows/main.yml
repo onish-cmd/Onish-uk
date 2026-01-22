@@ -41,8 +41,8 @@ jobs:
 
     - name: Download QEMU U-Boot
       run: |
-        wget https://ftp.denx.de/pub/u-boot/u-boot.bin -O u-boot.bin || \
-        wget https://github.com/u-boot/u-boot/raw/master/u-boot.bin -O u-boot.bin
+        sudo apt-get install -y u-boot-qemu
+        cp /usr/lib/u-boot/qemu_arm/u-boot.bin .
 
     - name: Package SD Card Image
       run: |
