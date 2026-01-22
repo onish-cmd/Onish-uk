@@ -15,29 +15,34 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Install Rust toolchain
-      uses: dtolnay/rust-toolchain@nightly # Nightly is usually better for custom targets
+      uses: dtolnay/rust-toolchain@nightly
       with:
         components: rust-src
 
-    - name: Install ARM Toolchain
-      run: sudo apt-get update && sudo apt-get install -y gcc-arm-none-eabi
+    - name: Install ARM & Boot Tools
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc-arm-none-eabi u-boot-tools
 
     - name: Build Kernel
-      # We use -Zbuild-std because the custom target doesn't have a pre-compiled 'core'
       run: |
         cargo build --release --target target.json -Z build-std=core,compiler_builtins
 
-    - name: Convert to .bin
+    - name: Create Bootable Image
       run: |
-        # Look in the 'release' folder and use the correct target name
-        arm-none-eabi-objcopy -O binary \
-          target/target/release/kernel \
-          onish-kernel.bin
+        # 1. Strip the ELF into a raw binary
+        arm-none-eabi-objcopy -O binary target/target/release/kernel kernel.bin
+        
+        # 2. Wrap it in a U-Boot header (The .img file)
+        # We use 0x40000000 because that's where QEMU/virt RAM starts
+        mkimage -A arm -O u-boot -T kernel -C none \
+          -a 0x40000000 -e 0x40000000 \
+          -n "Onish-Kernel" -d kernel.bin onish-kernel.img
 
-    - name: Upload Kernel Image
+    - name: Upload Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: onish-kernel-binary
+        name: onish-kernel-release
         path: |
-          onish-kernel.bin
+          onish-kernel.img
           target/target/release/kernel
