@@ -13,7 +13,11 @@ SECTIONS
     .rodata : { *(.rodata .rodata.*) }
     
     /* VERY IMPORTANT: PIC uses the Global Offset Table */
-    .got : { *(.got*) }
+    .got : { 
+        __got_start = .;
+        *(.got*) 
+        __got_end = .;
+    }
 
     .data : { *(.data .data.*) }
 
