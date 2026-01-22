@@ -19,16 +19,33 @@ global_asm!(
         orr r0, r0, #0x13
         msr cpsr_c, r0
 
-        @ 2. Set up Stack
-        @ In PIC mode, we use 'adr' to find our current position
+        @ 2. Calculate the Delta
+        @ r2 currently holds the FDT pointer from U-Boot - DO NOT LOSE IT
         adr r0, _start
         ldr r1, =_start
-        sub r12, r0, r1      @ r12 is still our delta/offset
-        
-        ldr r3, =__stack_top
-        add sp, r3, r12      @ Offset the stack pointer to real RAM
+        sub r12, r0, r1      @ r12 = Real Address - Linked Address
 
-        @ 3. Clear BSS
+        @ 3. Relocate the GOT (Global Offset Table)
+        @ This is what fixes 'static mut UART_BASE'
+        ldr r4, =__got_start
+        ldr r5, =__got_end
+        add r4, r4, r12      @ Adjust GOT start to real RAM
+        add r5, r5, r12      @ Adjust GOT end to real RAM
+
+    relocate_got:
+        cmp r4, r5
+        bge relocation_done
+        ldr r6, [r4]         @ Load the absolute pointer stored in GOT
+        add r6, r6, r12      @ Offset it by our Delta
+        str r6, [r4], #4     @ Store it back and move to next entry
+        b relocate_got
+
+    relocation_done:
+        @ 4. Set up Stack
+        ldr r3, =__stack_top
+        add sp, r3, r12      @ Offset the stack pointer
+
+        @ 5. Clear BSS
         ldr r1, =__bss_start
         add r1, r1, r12
         ldr r2, =__bss_end
@@ -39,10 +56,10 @@ global_asm!(
         strlo r3, [r1], #4
         blo clear_bss
 
-        @ 4. Jump to Rust
-        @ Pass DTB pointer (r2 from QEMU) and delta (r12)
-        mov r0, r2
-        mov r1, r12
+        @ 6. Jump to Rust
+        @ U-Boot put FDT in r2. Let's move it to r0 for kmain(dtb_ptr, delta)
+        mov r0, r2           @ Arg 0: FDT Pointer
+        mov r1, r12          @ Arg 1: Delta
         bl kmain
 
     halt:
