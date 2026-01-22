@@ -1,12 +1,12 @@
 #![no_std]
 #![no_main]
 #![reexport_test_harness_main = "test_main"]
-#![feature(rustc_private)]
+#![feature(rustc_private)] // You can also ignore this error since the github action uses nightly
 
 use core::panic::PanicInfo;
 use core::arch::global_asm;
 extern crate fdt;
-extern crate compiler_builtins;
+extern crate compiler_builtins; // You can safely ignore this unresolved extern crate
 
 global_asm!(
     r#"
@@ -54,7 +54,7 @@ global_asm!(
 #[no_mangle]
 static mut UART_BASE: *mut u8 = 0x09000000 as *mut u8;
 
-/// With PIC, this function automatically finds UART_BASE relative to the PC.
+
 pub fn uart_punc(c: u8) {
     unsafe {
         // The compiler now generates PC-relative code to find this address!

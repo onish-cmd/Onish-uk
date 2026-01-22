@@ -1,0 +1,9 @@
+# 1. Load the kernel to the 'recommended' RAM address for this specific board
+fatload virtio 0:1 ${kernel_addr_r} onish-kernel.img
+
+# 2. Use U-Boot math to skip the 64-byte (0x40) header
+# This works regardless of what kernel_addr_r actually is!
+setexpr entry_addr ${kernel_addr_r} + 0x40
+
+# 3. Launch the kernel
+go ${entry_addr} 0 ${fdt_addr_r}

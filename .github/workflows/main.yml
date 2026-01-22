@@ -1,4 +1,4 @@
-name: Build Onish-Kernel
+name: Build Onish-Kernel Image
 
 on:
   push:
@@ -22,27 +22,40 @@ jobs:
     - name: Install ARM & Boot Tools
       run: |
         sudo apt-get update
-        sudo apt-get install -y gcc-arm-none-eabi u-boot-tools
+        sudo apt-get install -y gcc-arm-none-eabi u-boot-tools dosfstools mtools wget
 
-    - name: Build Kernel
+    - name: Build Kernel (ELF)
       run: |
         cargo build --release --target target.json -Z build-std=core,compiler_builtins
 
-    - name: Create Bootable Image
+    - name: Create U-Boot Kernel Image
       run: |
-        # 1. Strip the ELF into a raw binary
-        arm-none-eabi-objcopy -O binary target/target/release/kernel kernel.bin
-        
-        # 2. Wrap it in a U-Boot header (The .img file)
-        # We use 0x40000000 because that's where QEMU/virt RAM starts
+        # Using -a 0 and -e 0 because your code is PIC and the linker is at 0x0
         mkimage -A arm -O u-boot -T kernel -C none \
-          -a 0x40000000 -e 0x40000000 \
-          -n "Onish-Kernel" -d kernel.bin onish-kernel.img
+          -a 0 -e 0 \
+          -n "Onish-Kernel" -d target/target/release/kernel onish-kernel.img
 
-    - name: Upload Artifacts
+    - name: Compile Boot Script
+      run: |
+        mkimage -A arm -T script -C none -n "Onish Boot" -d boot.source boot.scr
+
+    - name: Download QEMU U-Boot
+      run: |
+        wget https://ftp.denx.de/pub/u-boot/u-boot.bin -O u-boot.bin || \
+        wget https://github.com/u-boot/u-boot/raw/master/u-boot.bin -O u-boot.bin
+
+    - name: Package SD Card Image
+      run: |
+        dd if=/dev/zero of=onish-os.img bs=1M count=64
+        mkfs.vfat -F 32 onish-os.img
+        # Add the kernel and the compiled boot script
+        mcopy -i onish-os.img onish-kernel.img ::onish-kernel.img
+        mcopy -i onish-os.img boot.scr ::boot.scr
+
+    - name: Upload Everything
       uses: actions/upload-artifact@v4
       with:
-        name: onish-kernel-release
+        name: onish-kernel-full-package
         path: |
-          onish-kernel.img
-          target/target/release/kernel
+          onish-os.img
+          u-boot.bin
